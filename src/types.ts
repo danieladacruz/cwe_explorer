@@ -1,6 +1,7 @@
 export interface CWE {
   id: string;
   name: string;
+  description: string;
 }
 
 export interface CWERelation {

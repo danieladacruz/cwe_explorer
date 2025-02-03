@@ -14,13 +14,13 @@ import 'reactflow/dist/style.css';
 interface GraphProps {
   nodes: Node[];
   edges: Edge[];
+  onNodeClick?: (nodeId: string) => void;
 }
 
-export default function Graph({ nodes: initialNodes, edges: initialEdges }: GraphProps) {
+export default function Graph({ nodes: initialNodes, edges: initialEdges, onNodeClick }: GraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Update nodes and edges when props change
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
@@ -30,6 +30,12 @@ export default function Graph({ nodes: initialNodes, edges: initialEdges }: Grap
     setEdges((eds) => [...eds, params]);
   }, [setEdges]);
 
+  const handleNodeClick = useCallback((event: any, node: Node) => {
+    if (onNodeClick) {
+      onNodeClick(node.id);
+    }
+  }, [onNodeClick]);
+
   return (
     <div className="w-full h-[700px]">
       <ReactFlow
@@ -38,6 +44,7 @@ export default function Graph({ nodes: initialNodes, edges: initialEdges }: Grap
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={handleNodeClick}
         fitView
         attributionPosition="bottom-right"
         className="bg-gray-50"

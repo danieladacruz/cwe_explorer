@@ -13,14 +13,17 @@ export interface Database {
         Row: {
           id: string
           name: string
+          description: string
         }
         Insert: {
           id: string
           name: string
+          description: string
         }
         Update: {
           id?: string
           name?: string
+          description?: string
         }
       }
       cwe_relations: {
