@@ -2,7 +2,9 @@
 
 A modern, interactive visualization tool for exploring Common Weakness Enumeration (CWE) relationships. This application helps security professionals, developers, and researchers understand the connections between different CWEs through an intuitive graph interface.
 
-![CWE Dependency Graph](https://github.com/stackblitz/cwe-dependency-graph/assets/screenshot.png)
+<img width="1481" alt="Screenshot 2025-02-03 at 18 17 00" src="https://github.com/user-attachments/assets/141d0afa-0e36-40a2-9c87-be4b7a3a696e" />
+
+
 
 ## Features
 
