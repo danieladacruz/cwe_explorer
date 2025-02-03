@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Network, AlertCircle, X } from 'lucide-react';
+import { Search, Network, AlertCircle, X, Info } from 'lucide-react';
 import { Node, Edge } from 'reactflow';
 import Graph from './components/Graph';
 import { fetchCWEData } from './api';
@@ -13,52 +13,74 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCWE, setSelectedCWE] = useState<CWE | null>(null);
   const [cwesData, setCWEsData] = useState<Record<string, CWE>>({});
+  const [showPanel, setShowPanel] = useState(true);
 
-  const calculateNodePosition = (relationType: string, index: number, totalInCategory: number) => {
-    const RADIUS = 800;
-    const VERTICAL_SPACING = 400;
-    const HORIZONTAL_SPACING = 600;
-    
+  const handleNodeClick = (nodeId: string) => {
+    const cwe = cwesData[nodeId];
+    if (cwe) {
+      setSelectedCWE(cwe);
+      setShowPanel(true);
+    }
+  };
+
+  const getNodeStyle = (relationType: string) => {
     switch (relationType) {
-      case 'ChildOf': {
-        const normalizedIndex = index - (totalInCategory - 1) / 2;
-        const angleStep = (5 * Math.PI / 6) / Math.max(totalInCategory - 1, 1);
-        const baseAngle = Math.PI / 2;
-        const angle = baseAngle + (normalizedIndex * angleStep);
-        
+      case 'ChildOf':
+        return 'node-child';
+      case 'ParentOf':
+        return 'node-parent';
+      case 'PeerOf':
+        return 'node-peer';
+      default:
+        return 'node-other';
+    }
+  };
+
+  const getEdgeColor = (relationType: string) => {
+    switch (relationType) {
+      case 'ChildOf':
+        return '#22c55e'; // green-500
+      case 'ParentOf':
+        return '#a855f7'; // purple-500
+      case 'PeerOf':
+        return '#eab308'; // yellow-500
+      default:
+        return '#6b7280'; // gray-500
+    }
+  };
+
+  const calculateNodePosition = (relationType: string, index: number, total: number) => {
+    const radius = 300; // Distance from center
+    const spacing = (2 * Math.PI) / Math.max(total, 1);
+    let angle;
+
+    switch (relationType) {
+      case 'ChildOf':
+        // Position below, spread in a semi-circle
+        angle = Math.PI / 2 + (spacing * index - (Math.PI / 2));
         return {
-          x: Math.cos(angle) * RADIUS,
-          y: Math.sin(angle) * RADIUS
+          x: radius * Math.cos(angle),
+          y: radius * Math.sin(angle)
         };
-      }
-      
-      case 'ParentOf': {
-        const normalizedIndex = index - (totalInCategory - 1) / 2;
-        const angleStep = (5 * Math.PI / 6) / Math.max(totalInCategory - 1, 1);
-        const baseAngle = -Math.PI / 2;
-        const angle = baseAngle + (normalizedIndex * angleStep);
-        
+      case 'ParentOf':
+        // Position above, spread in a semi-circle
+        angle = -Math.PI / 2 + (spacing * index - (Math.PI / 2));
         return {
-          x: Math.cos(angle) * RADIUS,
-          y: Math.sin(angle) * RADIUS
+          x: radius * Math.cos(angle),
+          y: radius * Math.sin(angle)
         };
-      }
-      
-      case 'PeerOf': {
-        const normalizedIndex = index - (totalInCategory - 1) / 2;
+      case 'PeerOf':
+        // Position to the right
         return {
-          x: HORIZONTAL_SPACING,
-          y: normalizedIndex * VERTICAL_SPACING
+          x: radius,
+          y: (index - (total - 1) / 2) * 150
         };
-      }
-      
-      default: {
-        const normalizedIndex = index - (totalInCategory - 1) / 2;
+      default:
+        // Position to the left
         return {
-          x: -HORIZONTAL_SPACING,
-          y: normalizedIndex * VERTICAL_SPACING
+          x: -radius,
+          y: (index - (total - 1) / 2) * 150
         };
-      }
     }
   };
 
@@ -67,7 +89,6 @@ function App() {
     
     setLoading(true);
     setError(null);
-    setSelectedCWE(null);
     
     try {
       const data = await fetchCWEData(cweId);
@@ -75,10 +96,15 @@ function App() {
         setError(`CWE-${cweId.replace('CWE-', '')} not found`);
         setNodes([]);
         setEdges([]);
+        setSelectedCWE(null);
         return;
       }
       
       const { cwe, relations } = data;
+      // Set the initial CWE as selected when first searching
+      setSelectedCWE(cwe);
+      setShowPanel(true);
+      
       const newCWEsData: Record<string, CWE> = { [cwe.id]: cwe };
       
       // Create main node
@@ -177,41 +203,9 @@ function App() {
       setError('Error fetching CWE data');
       setNodes([]);
       setEdges([]);
+      setSelectedCWE(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getNodeStyle = (relationType: string) => {
-    switch (relationType) {
-      case 'ChildOf':
-        return 'node-child';
-      case 'ParentOf':
-        return 'node-parent';
-      case 'PeerOf':
-        return 'node-peer';
-      default:
-        return 'node-other';
-    }
-  };
-
-  const getEdgeColor = (relationType: string) => {
-    switch (relationType) {
-      case 'ChildOf':
-        return '#10B981';
-      case 'ParentOf':
-        return '#8B5CF6';
-      case 'PeerOf':
-        return '#F59E0B';
-      default:
-        return '#6B7280';
-    }
-  };
-
-  const handleNodeClick = (nodeId: string) => {
-    const cwe = cwesData[nodeId];
-    if (cwe) {
-      setSelectedCWE(cwe);
     }
   };
 
@@ -260,7 +254,7 @@ function App() {
           </div>
         </div>
         
-        <div className="flex gap-6">
+        <div className="flex gap-6 relative">
           <div className={`flex-1 bg-white rounded-xl shadow-lg p-6 mb-6 relative ${loading ? 'opacity-50' : ''}`}>
             {loading && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10 rounded-xl">
@@ -268,37 +262,48 @@ function App() {
               </div>
             )}
             {(nodes.length > 0 || loading) && <Graph nodes={nodes} edges={edges} onNodeClick={handleNodeClick} />}
+            {!nodes.length && !loading && (
+              <div className="text-center text-gray-500 mt-20">
+                <Network className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
+                <p className="text-lg">Enter a CWE ID to view its dependency graph</p>
+                <p className="text-sm text-gray-400 mt-2">The graph will show relationships between Common Weakness Enumerations</p>
+              </div>
+            )}
           </div>
 
-          {selectedCWE && (
-            <div className="w-96 bg-white rounded-xl shadow-lg p-6 mb-6 relative">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">CWE-{selectedCWE.id}</h2>
-                  <h3 className="text-lg text-gray-700">{selectedCWE.name}</h3>
+          {showPanel && (
+            <div className="w-96 sticky top-8 self-start bg-white rounded-xl shadow-lg p-6 mb-6">
+              {selectedCWE ? (
+                <>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">CWE-{selectedCWE.id}</h2>
+                      <h3 className="text-lg text-gray-700">{selectedCWE.name}</h3>
+                    </div>
+                    <button
+                      onClick={() => setShowPanel(false)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                  <div className="prose prose-sm max-w-none">
+                    <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
+                    <p className="text-gray-700 whitespace-pre-wrap">{selectedCWE.description}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Info className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                  <h3 className="text-lg font-semibold text-gray-700 mb-2">CWE Details</h3>
+                  <p className="text-gray-500 text-sm">
+                    Search for a CWE and click on any node in the graph to view detailed information about that Common Weakness Enumeration.
+                  </p>
                 </div>
-                <button
-                  onClick={() => setSelectedCWE(null)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="prose prose-sm max-w-none">
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
-                <p className="text-gray-700 whitespace-pre-wrap">{selectedCWE.description}</p>
-              </div>
+              )}
             </div>
           )}
         </div>
-        
-        {!nodes.length && !loading && (
-          <div className="text-center text-gray-500 mt-20 bg-white rounded-xl shadow-md p-8">
-            <Network className="w-16 h-16 mx-auto mb-4 text-blue-400 animate-pulse" />
-            <p className="text-lg">Enter a CWE ID to view its dependency graph</p>
-            <p className="text-sm text-gray-400 mt-2">The graph will show relationships between Common Weakness Enumerations</p>
-          </div>
-        )}
       </div>
     </div>
   );
