@@ -37,11 +37,10 @@ export default function Graph({ nodes: initialNodes, edges: initialEdges, onNode
     }
   }, [onNodeClick]);
 
-  // Configure fit view options with more zoom out
   const fitViewOptions: FitViewOptions = {
-    padding: 1, // Increased padding around the graph
-    minZoom: 0.05, // Allow more zoom out
-    maxZoom: 1.5,
+    padding: 2, // Much more padding around the graph
+    minZoom: 0.1, // Allow much more zoom out
+    maxZoom: 0.8,
     duration: 800,
   };
 
@@ -56,8 +55,8 @@ export default function Graph({ nodes: initialNodes, edges: initialEdges, onNode
         onNodeClick={handleNodeClick}
         fitView
         fitViewOptions={fitViewOptions}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.1 }} // Set a more zoomed out default view
-        minZoom={0.05} // Allow more zoom out
+        defaultViewport={{ x: 0, y: 0, zoom: 0.1 }} // Much more zoomed out default view
+        minZoom={0.1} // Allow much more zoom out
         maxZoom={1.5}
         attributionPosition="bottom-right"
         className="bg-gray-50"
@@ -67,7 +66,7 @@ export default function Graph({ nodes: initialNodes, edges: initialEdges, onNode
           className="bg-white shadow-lg border border-gray-200"
           showZoom={true}
           showFitView={true}
-          position="bottom-right"
+          fitViewOptions={fitViewOptions}
         />
         <MiniMap
           className="bg-white shadow-lg border border-gray-200"
