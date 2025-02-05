@@ -3,42 +3,23 @@ import { CWE, CWERelation } from './types';
 
 export async function fetchCWEData(cweId: string): Promise<{ cwe: CWE, relations: CWERelation[] } | null> {
   try {
-    // Format the CWE ID correctly - strip "CWE-" if present and add it back
-    const numericId = cweId.replace('CWE-', '');
-    const formattedId = `CWE-${numericId}`;
-    
-    // Fetch the CWE details
+    // Fetch CWE details using Supabase client
     const { data: cweData, error: cweError } = await supabase
       .from('cwe')
       .select('*')
-      .eq('id', numericId)
-      .maybeSingle();
-    
-    if (cweError) {
-      console.error('Error fetching CWE:', cweError);
-      return null;
-    }
+      .eq('id', cweId)
+      .single();
 
-    if (!cweData) {
-      console.error('CWE not found:', formattedId);
-      return null;
-    }
+    if (cweError) throw cweError;
+    if (!cweData) return null;
 
-    // Fetch all relations for this CWE
+    // Fetch relations using Supabase client
     const { data: relations, error: relationsError } = await supabase
       .from('cwe_relations')
-      .select(`
-        id,
-        cwe_id,
-        related_cwe,
-        relation_type
-      `)
-      .or(`cwe_id.eq.${numericId},related_cwe.eq.${numericId}`);
+      .select('*')
+      .or(`cwe_id.eq.${cweId},related_cwe.eq.${cweId}`);
 
-    if (relationsError) {
-      console.error('Error fetching relations:', relationsError);
-      return null;
-    }
+    if (relationsError) throw relationsError;
 
     return {
       cwe: cweData,
